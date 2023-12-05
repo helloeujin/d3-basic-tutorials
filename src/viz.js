@@ -1,12 +1,13 @@
 import * as d3 from "d3";
 import "./viz.css";
 
-//////////////  Init  //////////////
+////////////////////////////////////////////////////////////////////
+////////////////////////////  Init  ///////////////////////////////
 const svg = d3.select("#svg-container").append("svg").attr("id", "svg");
 // const g = svg.append("g"); // group
 
-const width = parseInt(d3.select("#svg-container").style("width"));
-const height = parseInt(d3.select("#svg-container").style("height"));
+let width = parseInt(d3.select("#svg-container").style("width"));
+let height = parseInt(d3.select("#svg-container").style("height"));
 const margin = { top: 30, right: 60, bottom: 60, left: 60 };
 
 // parsing & formatting
@@ -33,7 +34,11 @@ const line = d3
   .x((d) => xScale(d.date_parsed))
   .y((d) => yScale(d.Close));
 
-//////////////  Load CSV  //////////////
+// svg elements
+let path, x, y;
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////  Load CSV  ////////////////////////////
 let data = [];
 
 d3.csv("/data/BTC-USD.csv")
@@ -52,16 +57,18 @@ d3.csv("/data/BTC-USD.csv")
     // axis
     svg
       .append("g")
+      .attr("class", "x-axis")
       .attr("transform", `translate(0,${height - margin.bottom})`)
       .call(xAxis);
 
     svg
       .append("g")
+      .attr("class", "y-axis")
       .attr("transform", `translate(${margin.left}, 0)`)
       .call(yAxis);
 
     // add path
-    svg
+    path = svg
       .append("path")
       .datum(data)
       .attr("fill", "none")
@@ -72,3 +79,30 @@ d3.csv("/data/BTC-USD.csv")
   .catch((error) => {
     console.error("Error loading CSV data: ", error);
   });
+
+////////////////////////////////////////////////////////////////////
+////////////////////////////  Resize  //////////////////////////////
+window.addEventListener("resize", () => {
+  //  width, height updated
+  width = parseInt(d3.select("#svg-container").style("width"));
+  height = parseInt(d3.select("#svg-container").style("height"));
+
+  //  scale updated
+  xScale.range([margin.left, width - margin.right]);
+  yScale.range([height - margin.bottom, margin.top]);
+
+  //  line updated
+  line.x((d) => xScale(d.date_parsed)).y((d) => yScale(d.Close));
+
+  //  path updated
+  path.attr("d", line);
+
+  //  axis updated
+  d3.select(".x-axis")
+    .attr("transform", `translate(0,${height - margin.bottom})`)
+    .call(xAxis);
+
+  d3.select(".y-axis")
+    .attr("transform", `translate(${margin.left}, 0)`)
+    .call(yAxis);
+});
